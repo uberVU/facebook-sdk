@@ -90,9 +90,13 @@ class GraphAPI(object):
     for the active user from the cookie saved by the SDK.
 
     """
-    def __init__(self, access_token=None, timeout=None):
-        self.access_token = access_token
+    def __init__(self, access_token=None, app_secret=None, timeout=None):
         self.timeout = timeout
+        self.access_token = access_token
+        if app_secret:
+            self.appsecret_proof = hmac.new(key=str(app_secret),
+                                            msg=str(access_token),
+                                            digestmod=hashlib.sha256).hexdigest()
 
     def get_object(self, id, **args):
         """Fetchs the given object from the graph."""
@@ -289,6 +293,13 @@ class GraphAPI(object):
                 post_args["access_token"] = self.access_token
             else:
                 args["access_token"] = self.access_token
+
+        if self.appsecret_proof:
+            if post_args is not None:
+                post_args["appsecret_proof"] = self.appsecret_proof
+            else:
+                args["appsecret_proof"] = self.appsecret_proof
+
         post_data = None if post_args is None else urllib.urlencode(post_args)
         try:
             file = urllib2.urlopen("https://graph.facebook.com/" + path + "?" +
