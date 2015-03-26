@@ -93,10 +93,12 @@ class GraphAPI(object):
     def __init__(self, access_token=None, app_secret=None, timeout=None):
         self.timeout = timeout
         self.access_token = access_token
+        appsecret_proof = None
         if app_secret:
-            self.appsecret_proof = hmac.new(key=str(app_secret),
-                                            msg=str(access_token),
-                                            digestmod=hashlib.sha256).hexdigest()
+            appsecret_proof = hmac.new(key=str(app_secret),
+                                       msg=str(access_token),
+                                       digestmod=hashlib.sha256).hexdigest()
+        self.appsecret_proof = appsecret_proof
 
     def get_object(self, id, **args):
         """Fetchs the given object from the graph."""
