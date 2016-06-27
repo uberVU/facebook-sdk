@@ -45,6 +45,8 @@ import logging
 import socket
 
 # Find a JSON parser
+import re
+
 try:
     import simplejson as json
 except ImportError:
@@ -305,9 +307,10 @@ class GraphAPI(object):
                 args["appsecret_proof"] = self.appsecret_proof
 
         post_data = None if post_args is None else urllib.urlencode(post_args)
+        request_url = None
         try:
-            file = urllib2.urlopen(("https://graph.facebook.com/v%s/" % self.version) + path + "?" +
-                    urllib.urlencode(args), post_data, timeout=self.timeout)
+            request_url = ("https://graph.facebook.com/v%s/" % self.version) + path + "?" + urllib.urlencode(args)
+            file = urllib2.urlopen(request_url, post_data, timeout=self.timeout)
         except urllib2.HTTPError, e:
             response = _parse_json(e.read())
             raise GraphAPIError(response)
@@ -333,7 +336,7 @@ class GraphAPI(object):
         finally:
             file.close()
         if response and isinstance(response, dict) and response.get("error"):
-            raise GraphAPIError(response)
+            raise GraphAPIError(response, request_url)
         return response
 
     def api_request(self, path, args=None, post_args=None):
@@ -458,9 +461,13 @@ class GraphAPI(object):
 
 
 class GraphAPIError(Exception):
-    def __init__(self, result):
+    def __init__(self, result, request_url=''):
         self.result = result
         self.code = None
+
+        url = self._mask_access_token_in_url(request_url)
+        self.request_url = url if url else request_url
+
         try:
             self.type = result["error_code"]
         except:
@@ -485,6 +492,24 @@ class GraphAPIError(Exception):
 
         Exception.__init__(self, self.message)
 
+    def __str__(self):
+        return '\n'.join(['type - %s' % self.type, 'code - %s' % self.code, 'message - %s' % self.message,
+                          'result - %s' % self.result, 'url - %s' % self.request_url])
+
+    def __repr__(self):
+        return '\n'.join(['type - %s' % self.type, 'code - %s' % self.code, 'message - %s' % self.message,
+                          'result - %s' % self.result, 'url - %s' % self.request_url])
+
+    def _mask_access_token_in_url(self, request_url):
+        url = None
+
+        if request_url:
+            token_search = re.search('access_token=([a-zA-Z0-9]*)', request_url)
+            if token_search:
+                start, end = token_search.span()
+                url = request_url[:start] + 'access_token=*****' + request_url[end:]
+
+        return url
 
 def get_user_from_cookie(cookies, app_id, app_secret):
     """Parses the cookie set by the official Facebook JavaScript SDK.
