@@ -42,11 +42,10 @@ import hashlib
 import hmac
 import base64
 import logging
+import re
 import socket
 
 # Find a JSON parser
-import re
-
 try:
     import simplejson as json
 except ImportError:
