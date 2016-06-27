@@ -306,13 +306,13 @@ class GraphAPI(object):
                 args["appsecret_proof"] = self.appsecret_proof
 
         post_data = None if post_args is None else urllib.urlencode(post_args)
-        request_url = None
+        request_url = ''
         try:
             request_url = ("https://graph.facebook.com/v%s/" % self.version) + path + "?" + urllib.urlencode(args)
             file = urllib2.urlopen(request_url, post_data, timeout=self.timeout)
         except urllib2.HTTPError, e:
             response = _parse_json(e.read())
-            raise GraphAPIError(response)
+            raise GraphAPIError(response, request_url)
         except TypeError:
             # Timeout support for Python <2.6
             if self.timeout:
