@@ -333,8 +333,7 @@ class GraphAPI(object):
         finally:
             file.close()
         if response and isinstance(response, dict) and response.get("error"):
-            raise GraphAPIError(response["error"]["type"],
-                                response["error"]["message"])
+            raise GraphAPIError(response)
         return response
 
     def api_request(self, path, args=None, post_args=None):
@@ -460,9 +459,8 @@ class GraphAPI(object):
 
 class GraphAPIError(Exception):
     def __init__(self, result):
-        #Exception.__init__(self, message)
-        #self.type = type
         self.result = result
+        self.code = None
         try:
             self.type = result["error_code"]
         except:
@@ -475,6 +473,9 @@ class GraphAPIError(Exception):
             # OAuth 2.0 Draft 00
             try:
                 self.message = result["error"]["message"]
+                self.code = result["error"].get("code")
+                if not self.type:
+                    self.type = result["error"].get("type", "")
             except:
                 # REST server style
                 try:
