@@ -90,9 +90,10 @@ class GraphAPI(object):
     for the active user from the cookie saved by the SDK.
 
     """
-    def __init__(self, access_token=None, app_secret=None, timeout=None):
+    def __init__(self, access_token=None, app_secret=None, timeout=None, version='2.0'):
         self.timeout = timeout
         self.access_token = access_token
+        self.version = version
         appsecret_proof = None
         if app_secret:
             appsecret_proof = hmac.new(key=str(app_secret),
@@ -180,7 +181,8 @@ class GraphAPI(object):
         """Deletes the Request with the given ID for the given user."""
         conn = httplib.HTTPSConnection('graph.facebook.com')
 
-        url = '/%s_%s?%s' % (
+        url = '/v%s/%s_%s?%s' % (
+            self.version,
             request_id,
             user_id,
             urllib.urlencode({'access_token': self.access_token}),
@@ -217,8 +219,8 @@ class GraphAPI(object):
         }
         post_args.update(kwargs)
         content_type, body = self._encode_multipart_form(post_args)
-        req = urllib2.Request(("https://graph.facebook.com/%s/photos" %
-                               object_id),
+        req = urllib2.Request(("https://graph.facebook.com/v%s/%s/photos" % (
+                               self.version, object_id)),
                               data=body)
         req.add_header('Content-Type', content_type)
         try:
@@ -304,7 +306,7 @@ class GraphAPI(object):
 
         post_data = None if post_args is None else urllib.urlencode(post_args)
         try:
-            file = urllib2.urlopen("https://graph.facebook.com/" + path + "?" +
+            file = urllib2.urlopen(("https://graph.facebook.com/v%s/" % self.version) + path + "?" +
                     urllib.urlencode(args), post_data, timeout=self.timeout)
         except urllib2.HTTPError, e:
             response = _parse_json(e.read())
@@ -313,7 +315,7 @@ class GraphAPI(object):
             # Timeout support for Python <2.6
             if self.timeout:
                 socket.setdefaulttimeout(self.timeout)
-            file = urllib2.urlopen("https://graph.facebook.com/" + path + "?" +
+            file = urllib2.urlopen(("https://graph.facebook.com/v%s/" % self.version)+ path + "?" +
                                     urllib.urlencode(args), post_data)
         try:
             fileInfo = file.info()
