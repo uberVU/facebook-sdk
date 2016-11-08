@@ -311,6 +311,9 @@ class GraphAPI(object):
             request_url = ("https://graph.facebook.com/v%s/" % self.version) + path + "?" + urllib.urlencode(args)
             file = urllib2.urlopen(request_url, post_data, timeout=self.timeout)
         except urllib2.HTTPError, e:
+            if e.code == 500:
+                raise GraphAPIError(result={'error': {'code': 500, 'message': 'Fb internal error'}},
+                                    request_url=request_url)
             response = _parse_json(e.read())
             raise GraphAPIError(response, request_url)
         except TypeError:
