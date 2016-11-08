@@ -46,14 +46,10 @@ import re
 import socket
 
 # Find a JSON parser
-try:
-    import simplejson as json
-except ImportError:
-    try:
-        from django.utils import simplejson as json
-    except ImportError:
-        import json
+import simplejson as json
 _parse_json = json.loads
+
+from simplejson import JSONDecodeError
 
 # Find a query string parser
 try:
@@ -311,7 +307,12 @@ class GraphAPI(object):
             request_url = ("https://graph.facebook.com/v%s/" % self.version) + path + "?" + urllib.urlencode(args)
             file = urllib2.urlopen(request_url, post_data, timeout=self.timeout)
         except urllib2.HTTPError, e:
-            response = _parse_json(e.read())
+            try:
+                response = _parse_json(e.read())
+            except JSONDecodeError:
+                raise GraphAPIError(result={'error': {'code': e.code,
+                                                      'message': 'Unparsable fb error'}},
+                                    request_url=request_url)
             raise GraphAPIError(response, request_url)
         except TypeError:
             # Timeout support for Python <2.6
