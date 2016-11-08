@@ -55,6 +55,8 @@ except ImportError:
         import json
 _parse_json = json.loads
 
+from simplejson import JSONDecodeError
+
 # Find a query string parser
 try:
     from urlparse import parse_qs
@@ -311,10 +313,12 @@ class GraphAPI(object):
             request_url = ("https://graph.facebook.com/v%s/" % self.version) + path + "?" + urllib.urlencode(args)
             file = urllib2.urlopen(request_url, post_data, timeout=self.timeout)
         except urllib2.HTTPError, e:
-            if e.code == 500:
-                raise GraphAPIError(result={'error': {'code': 500, 'message': 'Fb internal error'}},
+            try:
+                response = _parse_json(e.read())
+            except JSONDecodeError:
+                raise GraphAPIError(result={'error': {'code': e.code,
+                                                      'message': 'Unparsable fb error'}},
                                     request_url=request_url)
-            response = _parse_json(e.read())
             raise GraphAPIError(response, request_url)
         except TypeError:
             # Timeout support for Python <2.6
