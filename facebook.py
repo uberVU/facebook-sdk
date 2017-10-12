@@ -337,6 +337,8 @@ class GraphAPI(object):
             file.close()
         if response and isinstance(response, dict) and response.get("error"):
             raise GraphAPIError(response, request_url)
+
+        # Batched calls return a list instead of a dict, so this check is needed
         if response and isinstance(response, dict):
             response['info'] = fileInfo
 
