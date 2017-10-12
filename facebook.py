@@ -334,7 +334,6 @@ class GraphAPI(object):
             else:
                 raise GraphAPIError('Maintype was not text or image')
         finally:
-            response['info'] = fileInfo
             file.close()
         if response and isinstance(response, dict) and response.get("error"):
             raise GraphAPIError(response, request_url)
