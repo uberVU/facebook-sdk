@@ -334,10 +334,14 @@ class GraphAPI(object):
             else:
                 raise GraphAPIError('Maintype was not text or image')
         finally:
-            response['info'] = fileInfo
             file.close()
         if response and isinstance(response, dict) and response.get("error"):
             raise GraphAPIError(response, request_url)
+
+        # Batched calls return a list instead of a dict, so this check is needed
+        if response and isinstance(response, dict):
+            response['info'] = fileInfo
+
         return response
 
     def api_request(self, path, args=None, post_args=None):
