@@ -313,6 +313,7 @@ class GraphAPI(object):
                 raise GraphAPIError(result={'error': {'code': e.code,
                                                       'message': 'Unparsable fb error'}},
                                     request_url=request_url)
+            response['http_error_code'] = e.code
             raise GraphAPIError(response, request_url)
         except TypeError:
             # Timeout support for Python <2.6
