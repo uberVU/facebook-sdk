@@ -471,7 +471,7 @@ class GraphAPIError(Exception):
         self.result = result
         self.code = None
 
-        url = self._mask_access_token_in_url(request_url)
+        url = self._mask_sensitive_data_in_url(request_url)
         self.request_url = url if url else request_url
 
         try:
@@ -506,14 +506,19 @@ class GraphAPIError(Exception):
         return '\n'.join(['type - %s' % self.type, 'code - %s' % self.code, 'message - %s' % self.message,
                           'result - %s' % self.result, 'url - %s' % self.request_url])
 
-    def _mask_access_token_in_url(self, request_url):
-        url = None
+    def _mask_sensitive_data_in_url(self, request_url):
+        url = request_url
 
-        if request_url:
-            token_search = re.search('access_token=([a-zA-Z0-9]*)', request_url)
+        if url:
+            token_search = re.search('access_token=([a-zA-Z0-9]*)', url)
             if token_search:
                 start, end = token_search.span()
-                url = request_url[:start] + 'access_token=*****' + request_url[end:]
+                url = url[:start] + 'access_token=*****' + url[end:]
+
+            secret_proof_search = re.search('appsecret_proof=([a-zA-Z0-9]*)', url)
+            if secret_proof_search:
+                start, end = secret_proof_search.span()
+                url = url[:start] + 'appsecret_proof=*****' + url[end:]
 
         return url
 
