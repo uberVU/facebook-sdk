@@ -33,20 +33,19 @@ if user:
 
 """
 
-import cgi
-import time
-import urllib
-import urllib2
-import httplib
+import base64
 import hashlib
 import hmac
-import base64
+import httplib
 import logging
 import re
 import socket
+import urllib
+import urllib2
 
 # Find a JSON parser
 import simplejson as json
+
 _parse_json = json.loads
 
 from simplejson import JSONDecodeError
@@ -471,7 +470,7 @@ class GraphAPIError(Exception):
         self.result = result
         self.code = None
 
-        url = self._mask_sensitive_data_in_url(request_url)
+        url = self._sanitize_url(request_url)
         self.request_url = url if url else request_url
 
         try:
@@ -506,7 +505,7 @@ class GraphAPIError(Exception):
         return '\n'.join(['type - %s' % self.type, 'code - %s' % self.code, 'message - %s' % self.message,
                           'result - %s' % self.result, 'url - %s' % self.request_url])
 
-    def _mask_sensitive_data_in_url(self, request_url):
+    def _sanitize_url(self, request_url):
         url = request_url
 
         if url:
@@ -519,6 +518,11 @@ class GraphAPIError(Exception):
             if secret_proof_search:
                 start, end = secret_proof_search.span()
                 url = url[:start] + 'appsecret_proof=*****' + url[end:]
+
+            metric_search = re.search('metric=([a-zA-Z0-9%\+_-]*)', url)
+            if metric_search:
+                start, end = metric_search.span()
+                url = url[:start] + metric_search.group()[:200] + url[end:]
 
         return url
 
